@@ -69,7 +69,7 @@ void system::publish_pose(const Eigen::Matrix4d& cam_pose_wc, const ros::Time& s
     // Send map->odom transform. Set publish_tf to false if not using TF
     if (publish_tf_) {
         try {
-            auto camera_to_odom = tf_->lookupTransform(camera_optical_frame_, odom_frame_, stamp, ros::Duration(0.0));
+            auto camera_to_odom = tf_->lookupTransform(camera_optical_frame_, odom_frame_, stamp, ros::Duration(1.));
             Eigen::Affine3d camera_to_odom_affine = tf2::transformToEigen(camera_to_odom.transform);
 
             Eigen::Affine3d map_to_odom3d_affine = map_to_camera_affine * camera_to_odom_affine;
@@ -332,7 +332,15 @@ rgbd::rgbd(const std::shared_ptr<stella_vslam::system>& slam,
 
 void rgbd::callback(const sensor_msgs::ImageConstPtr& color, const sensor_msgs::ImageConstPtr& depth) {
     if (camera_optical_frame_.empty()) {
+#if 0
         camera_optical_frame_ = color->header.frame_id;
+#else
+        std::string frame_id = color->header.frame_id;
+        if (frame_id[0] == '/') {
+            frame_id = frame_id.substr(1);
+        }
+        camera_optical_frame_ = frame_id;
+#endif
     }
     auto colorcv = cv_bridge::toCvShare(color)->image;
     auto depthcv = cv_bridge::toCvShare(depth)->image;
